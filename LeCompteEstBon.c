@@ -13,7 +13,7 @@
 #define RES_ERROR    (0)
 #define SOLUTION_LEN (128)
 
-#define MAX_NUMBER (100)
+#define MIN_RESULT (100)
 #define MAX_RESULT (1000)
 
 
@@ -34,14 +34,14 @@ static bool LeCompteEstBon(unsigned Numbers[], size_t Size, char* Sol);
 
 static void  ParseArgs(int argc, char * argv[], unsigned  Numbers[])
 {
-   if(( NB_ARGS == argc) && ( MAX_NUMBER < ( Result = atoi(*(++argv)))) && 
+   if(( NB_ARGS == argc) && ( MIN_RESULT < ( Result = atoi(*(++argv)))) && 
                               (Result < MAX_RESULT ))
    {
       int Number = ARGS_ERROR;
 
       for ( int Index = 0; Index < NUMBERS ;Index ++)
       {
-         if (0 < (Number = atoi(*(++argv))) && (Number <= MAX_NUMBER))
+         if (0 < (Number = atoi(*(++argv))) && (Number <= MIN_RESULT))
          {
             Numbers[Index] = (unsigned) Number;
          }
@@ -61,18 +61,11 @@ static void  ParseArgs(int argc, char * argv[], unsigned  Numbers[])
 static bool Calculate( char Operation , uint8_t First, uint8_t Second, 
                            unsigned  Numbers[], size_t Size, char * Sol)
 {
-
    bool Stop = false;
+   int Res = RES_ERROR;
    unsigned Op1 = Numbers[First];
    unsigned Op2 = Numbers[Second];
-   int Res = Op1;
-   
-   if (Op1 < Op2)
-   {
-      Op1 = Op2;
-      Op2 = Res; 
-   }
-   
+
    switch (Operation)
    {
       case '+':
@@ -92,8 +85,7 @@ static bool Calculate( char Operation , uint8_t First, uint8_t Second,
          break;
 
       default:
-         fprintf(stderr, "Bad Operation = %c\n", Operation);    
-         Res = RES_ERROR;
+         fprintf(stderr, "Bad Operation = %c\n", Operation);
    }
    
    if ( Res)
@@ -108,7 +100,11 @@ static bool Calculate( char Operation , uint8_t First, uint8_t Second,
       if ( NewAccuracy < Accuracy)
       {
          Accuracy = NewAccuracy;
-         memcpy(Solution, NewSol, sizeof Solution);
+#ifdef _WIN64
+         strcpy_s(Solution, sizeof Solution, NewSol);
+#else
+         strcpy(Solution, NewSol);
+#endif
       }
       if (!NewAccuracy)
       {
@@ -131,16 +127,39 @@ static bool Calculate( char Operation , uint8_t First, uint8_t Second,
 static bool LeCompteEstBon( unsigned  Numbers[], size_t Size, char* Sol)
 {
    bool Stop = false;
-   
+   int First, Second;
+
    for ( int i = 0; (i< Size -1) && (!Stop); i++)
    {
       for (int j = i +1 ; (j < Size) && (!Stop); j++)
       {
-         
-         Stop = Calculate( '+', i,j, Numbers, Size , Sol) || 
-                Calculate( '-', i,j, Numbers, Size, Sol) ||
-                Calculate( '*', i,j, Numbers, Size, Sol) ||
-                Calculate( '/', i,j, Numbers, Size, Sol);
+         Stop =   Calculate( '+', i , j, Numbers, Size , Sol) ;
+
+         if ( !Stop)
+         {
+            if (Numbers[i] < Numbers[j])
+            {
+               First = j;
+               Second = i; 
+            }
+            else
+            {
+               First = i;
+               Second =j;
+            }
+            
+
+            Stop = ( ( 1 == Numbers[Second]) ?
+                           false : 
+                           Calculate( '*', First, Second, Numbers, Size , Sol) ||
+                            Calculate( '/', First, Second, Numbers, Size , Sol))
+                  ||
+                     ( (Numbers[First] == Numbers[Second])? 
+                           false: 
+                           Calculate( '-', First, Second, Numbers, Size , Sol));
+                     
+                     
+         }
       }
    }
    return Stop;

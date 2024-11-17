@@ -112,7 +112,8 @@ static bool Calculate( char Operation , uint8_t First, uint8_t Second,
       }
       else if (Size > 2)
       {
-         unsigned  NewArray[--Size] ;
+         unsigned  NewArray[Size] ;
+         Size--;
          
          memcpy(NewArray, Numbers, sizeof NewArray);
          NewArray[First] = Res;

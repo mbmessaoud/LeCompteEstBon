@@ -100,7 +100,7 @@ static bool Calculate( char Operation , uint8_t First, uint8_t Second,
       if ( NewAccuracy < Accuracy)
       {
          Accuracy = NewAccuracy;
-#ifdef _WIN64
+#if defined(_MSC_VER)
          strcpy_s(Solution, sizeof Solution, NewSol);
 #else
          strcpy(Solution, NewSol);
